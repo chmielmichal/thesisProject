@@ -1,51 +1,103 @@
+from google.cloud import storage
+from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 import os
 import pygame
 from pygame.locals import *
 
-# Inicjalizacja Pygame
-pygame.init()
+# Initialize Google Cloud Storage client
+client = storage.Client()
 
-# Ustawienia ekranu
-screen = pygame.display.set_mode((1920, 1080))
+# GCS bucket information
+bucket_name = "thesisproject-8470d.appspot.com"
+
+# Local folder to save downloaded images
+local_folder = "downloaded_images"
+os.makedirs(local_folder, exist_ok=True)
+
+# Function to download and display an image from GCS
+def display_image_from_gcs(object_name):
+    # Local path to save the downloaded image
+    local_path = os.path.join(local_folder, object_name)
+
+    # Download image from GCS
+    bucket = client.get_bucket(bucket_name)
+    blob = bucket.blob(object_name)
+    blob.download_to_filename(local_path)
+
+    # Display the downloaded image using Pygame
+    display_image(local_path)
+
+    # Clean up: Delete the local downloaded image file
+    os.remove(local_path)
+
+    # Wait for a short duration before displaying the next image
+    pygame.time.wait(3000)
+
+# Pygame initialization
+pygame.init()
+screen = pygame.display.set_mode((2560, 1440))
 pygame.display.set_caption("Image Viewer")
 
-# Funkcja do wczytywania i wyświetlania obrazu z obramówką i napisami
+# Function to display an image with frame and text
 def display_image(file_path):
     image = Image.open(file_path)
-    
-    # Dodaj obramowanie
-    border_size = 10
-    bordered_image = Image.new('RGB', (image.width + 2 * border_size, image.height + 2 * border_size), 'white')
-    bordered_image.paste(image, (border_size, border_size))
 
-    # Dodaj napisy
-    draw = ImageDraw.Draw(bordered_image)
+    # Adjust frame size and position
+    border_width = 200
+    border_height = 300
+    composite_image = Image.new('RGB', (image.width + border_width, image.height + border_height), 'white')
+    composite_image.paste(image, (0, 0))
+
+    # Add frame in the shape of the letter "L"
+    draw = ImageDraw.Draw(composite_image)
+    draw.rectangle([(image.width, 0), (image.width + border_width, image.height)], outline="white", width=border_width)
+    draw.rectangle([(0, image.height), (image.width, image.height + border_height)], outline="white", width=border_width)
+
+    # Add text
     font = ImageFont.load_default()
-    draw.text((10, image.height + border_size + 10), "Twój tekst tutaj", font=font, fill="black")
+    draw.text((10, image.height + border_width + 10), "Your text here", font=font, fill="black")
 
-    # Zapisz tymczasowy plik z wynikiem
+    # Save temporary file with the result
     result_path = "result.jpg"
-    bordered_image.save(result_path)
+    composite_image.save(result_path)
 
-    # Wyświetl obraz w oknie Pygame
+    # Display the image in the Pygame window
     img = pygame.image.load(result_path)
     screen.blit(img, (0, 0))
     pygame.display.flip()
 
-# Główna pętla programu
+# Main loop
 running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            running = False
 
-    # Tutaj umieść kod do wczytywania kolejnych obrazów z folderu
-    image_folder = "D:\\thesisProject\\pictures"
-    for filename in os.listdir(image_folder):
-        if filename.endswith(".jpg"):
-            file_path = os.path.join(image_folder, filename)
-            display_image(file_path)
-            pygame.time.wait(2000)  # Poczekaj 2 sekundy przed przejściem do kolejnego obrazu
+try:
+    while running:
+        for event in pygame.event.get():
+            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+                running = False
 
-pygame.quit()
+        # Get a list of all objects in the GCS bucket
+        bucket = client.get_bucket(bucket_name)
+        blobs = bucket.list_blobs()
+
+        # Download and display each image
+        for blob in blobs:
+            if blob.name.endswith(".jpg"):
+                display_image_from_gcs(blob.name)
+
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+finally:
+    pygame.quit()
+
+
+
+
+
+
+
+
+
+
+
