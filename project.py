@@ -4,6 +4,10 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 import pygame
 from pygame.locals import *
+import requests
+
+#command to run it for first time   $env:GOOGLE_APPLICATION_CREDENTIALS = "D:\thesisProject\thesisproject-8470d-a832794d2e11.json"
+
 
 # Initialize Google Cloud Storage client
 client = storage.Client()
@@ -39,7 +43,7 @@ pygame.init()
 screen = pygame.display.set_mode((2560, 1440))
 pygame.display.set_caption("Image Viewer")
 
-# Function to display an image with frame and text
+# Function to display an image with frame and weather information
 def display_image(file_path):
     image = Image.open(file_path)
 
@@ -54,9 +58,16 @@ def display_image(file_path):
     draw.rectangle([(image.width, 0), (image.width + border_width, image.height)], outline="white", width=border_width)
     draw.rectangle([(0, image.height), (image.width, image.height + border_height)], outline="white", width=border_width)
 
-    # Add text
+    # Get weather information from OpenWeatherMap API
+    weather_data = get_weather_data()
     font = ImageFont.load_default()
-    draw.text((10, image.height + border_width + 10), "Your text here", font=font, fill="black")
+    
+    # Adjust font size
+    font_size = 20
+    font = ImageFont.truetype("arial.ttf", font_size)
+
+    # Add weather information
+    draw.text((50, image.height + border_width + 10), weather_data, font=font, fill="black")
 
     # Save temporary file with the result
     result_path = "result.jpg"
@@ -66,6 +77,23 @@ def display_image(file_path):
     img = pygame.image.load(result_path)
     screen.blit(img, (0, 0))
     pygame.display.flip()
+
+# OpenWeatherMap API
+def get_weather_data():
+    api_key = '84cea28a50728eb44f7ccde38994cb77'
+    city_name = 'Bielsko-Biała'  
+
+    api_url = f'http://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={api_key}'
+    response = requests.get(api_url)
+    data = response.json()
+
+    # Information
+    if 'main' in data and 'temp' in data['main']:
+        temperature = data['main']['temp']
+        weather_description = data['weather'][0]['description']
+        return f'Temperature: {temperature}°C\nWeather: {weather_description}'
+    else:
+        return 'Weather information not available'
 
 # Main loop
 running = True
@@ -90,13 +118,6 @@ except Exception as e:
 
 finally:
     pygame.quit()
-
-
-
-
-
-
-
 
 
 
