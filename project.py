@@ -8,7 +8,7 @@ import requests
 from datetime import datetime
 import qrcode
 
-# command to run it for the first time $env:GOOGLE_APPLICATION_CREDENTIALS = "D:\thesisProject\thesisproject-8470d-a832794d2e11.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:\\thesisProject\\thesisproject-8470d-a832794d2e11.json"
 
 # Initialize Google Cloud Storage client
 client = storage.Client()
