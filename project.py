@@ -77,15 +77,12 @@ def display_image(file_path):
     draw.rectangle([(0, image.height), (screen.get_width(), screen.get_height())], fill=border_color)
 
     # Weather information from OpenWeatherMap API
-    weather_data = get_weather_data()
-    font = ImageFont.load_default()
-
-    # Font size
+    weather_text = get_weather_data()
     font_size = 20
     font = ImageFont.truetype("arial.ttf", font_size)
-
-    # Weather information
-    draw.text((50, image.height + border_height + 10), weather_data, font=font, fill="white")
+    weather_text_bbox = draw.textbbox((0, 0), weather_text, font=font)
+    weather_text_width, weather_text_height = weather_text_bbox[2] - weather_text_bbox[0], weather_text_bbox[3] - weather_text_bbox[1]
+    draw.text((screen.get_width() - weather_text_width - 190, border_height + 340), weather_text, font=font, fill="white")
 
     # Time display
     current_time = datetime.now().strftime("%H:%M")
@@ -93,7 +90,21 @@ def display_image(file_path):
     time_font = ImageFont.truetype("arial.ttf", time_font_size)
     text_bbox = draw.textbbox((0, 0), current_time, font=time_font)
     text_width, text_height = text_bbox[2] - text_bbox[0], text_bbox[3] - text_bbox[1]
-    draw.text((screen.get_width() - text_width - 220, border_height + 10), current_time, font=time_font, fill="white")
+    draw.text((screen.get_width() - text_width - 250, border_height + 200), current_time, font=time_font, fill="white")
+
+    # Date display
+    current_date = datetime.now().strftime("%d-%b-%Y")
+    date_font_size = 30
+    date_font = ImageFont.truetype("arial.ttf", date_font_size)
+    date_text_bbox = draw.textbbox((0, 0), current_date, font=date_font)
+    date_text_width, date_text_height = date_text_bbox[2] - date_text_bbox[0], date_text_bbox[3] - date_text_bbox[1]
+    draw.text((screen.get_width() - date_text_width - 230, border_height + 270), current_date, font=date_font, fill="white")
+    
+    # Logo display
+    logo_path = "logo/logo.jpg"
+    logo = Image.open(logo_path)
+    logo = logo.resize((300, 300))  
+    composite_image.paste(logo, (screen.get_width() - logo.width - 160, 10))
 
     qr_code_link = "https://plany.ath.bielsko.pl"
     qr_code = generate_qr_code(qr_code_link)
